@@ -5,5 +5,5 @@ from typing import List
 
 class TextChunker(ABC):
     @abstractmethod
-    def chunk_text(self, text: Document) -> List[Chunk]:
+    def chunk_document(self, doc: Document) -> List[Chunk]:
         pass
