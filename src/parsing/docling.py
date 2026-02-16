@@ -2,7 +2,7 @@ from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from ..models.document import Document, Element
-from .parsing.base import DocumentParser
+from .base import DocumentParser
 
 from pathlib import Path
 
