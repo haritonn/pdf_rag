@@ -14,7 +14,7 @@ class IngestionPipeline:
 
     def process_file(self, file_path: Path) -> List[Chunk]:
         document = self._parser.parse_file(file_path)
-        chunks = self._chunker.chunk_text(document)
+        chunks = self._chunker.chunk_document(document)
 
         return chunks
 
