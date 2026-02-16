@@ -1,26 +1,33 @@
-import sys
 from pathlib import Path
+import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 
 from src.parsing.docling import DoclingParser
 from src.chunking.llama import LlamaIndexChunker
-from src.pipeline.ingestion import IngestionPipeline
 
 
-def test_pipeline():
-    """Test on sample .pdf file"""
-    parser = DoclingParser(extract_images=False, extract_tables=True)
-    chunker = LlamaIndexChunker(chunk_size=1024, chunk_overlap=100)
-    pipeline = IngestionPipeline(parser=parser, chunker=chunker)
+parser = DoclingParser(extract_images=False, extract_tables=True)
+doc = parser.parse_file(Path("test.pdf"))
 
-    file_path = Path("test.pdf")
-    chunks = pipeline.process_file(file_path)
+print("PARSED ELEMENTS:")
 
-    print(f"Total chunks: {len(chunks)}")
-    for i, chunk in enumerate(chunks[:3]):
-        print(f"Chunk {i}: {chunk.text[:200]}...")
+for i, elem in enumerate(doc.elements):
+    print(f"\nElement {i}:")
+    print(f"  Type: {elem.type}")
+    print(f"  Metadata: {elem.metadata}")
+    print(f"  Content:\n{elem.content[:500]}")
+    print("-" * 60)
 
+chunker = LlamaIndexChunker(chunk_size=1024, chunk_overlap=100)
+chunks = chunker.chunk_document(doc)
 
-if __name__ == "__main__":
-    test_pipeline()
+print("\n" + "=" * 60)
+print("CHUNKS:")
+print("=" * 60)
+
+for i, chunk in enumerate(chunks):
+    print(f"\nChunk {i}:")
+    print(f"  Metadata: {chunk.metadata}")
+    print(f"  Text:\n{chunk.text}")
+    print("-" * 60)
