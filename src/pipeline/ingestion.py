@@ -19,7 +19,7 @@ class IngestionPipeline:
         self._parser = parser
         self._chunker = chunker
         self._embed = embed
-        self.vector_store = vector_store
+        self._vector_store = vector_store
 
     def process_file(self, file_path: Path) -> int:
         document = self._parser.parse_file(file_path)

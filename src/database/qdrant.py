@@ -1,7 +1,7 @@
 import uuid
 from .base import VectorStore
 from qdrant_client import QdrantClient
-from qdrant_client.models import VectorParams, Distance, PointStruct, Filter
+from qdrant_client.models import VectorParams, Distance, PointStruct
 from langchain_core.document import Document as LangChainDocument
 
 
@@ -20,7 +20,7 @@ class QdrantVectorStore(VectorStore):
 
     def ensure_collection(self, collection_name: str) -> None:
         """Creating collection if it doesnt exist"""
-        if not collection_exists(collection_name):
+        if not self.collection_exists(collection_name):
             self.client.create_collection(
                 collection_name=collection_name,
                 vectors_config=VectorParams(
@@ -63,4 +63,3 @@ class QdrantVectorStore(VectorStore):
             )
             for hit in hits
         ]
-
