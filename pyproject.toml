@@ -9,4 +9,5 @@ dependencies = [
     "fastembed",
     "langchain>=1.2.10",
     "pandas>=2.3.3",
+    "qdrant-client>=1.17.0",
 ]
