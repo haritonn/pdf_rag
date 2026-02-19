@@ -19,16 +19,7 @@ class Document:
     metadata: Dict
 
     def get_content(self):
-        return ("\n\n".join(elem.content) for elem in self.elements)
+        return "\n\n".join(elem.content) for elem in self.elements
 
     def get_content_by_type(self, type):
         return [elem for elem in self.elements if elem.type == type]
-
-
-@dataclass
-class Chunk:
-    """Chunk of document"""
-
-    text: str
-    metadata: Dict
-    chunk: Optional[str]

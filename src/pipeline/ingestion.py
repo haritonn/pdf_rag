@@ -1,8 +1,8 @@
-from ..models.document import Chunk
 from pathlib import Path
 from typing import List
 from ..chunking.base import TextChunker
 from ..parsing.base import DocumentParser
+from langchain_core.documents import Document as LangChainDocument
 
 
 class IngestionPipeline:
@@ -12,17 +12,13 @@ class IngestionPipeline:
         self._parser = parser
         self._chunker = chunker
 
-    def process_file(self, file_path: Path) -> List[Chunk]:
+    def process_file(self, file_path: Path) -> List[LangChainDocument]:
         document = self._parser.parse_file(file_path)
-        chunks = self._chunker.chunk_document(document)
+        return self._chunker.chunk_document(document)
 
-        return chunks
-
-    def preprocess_batch(self, file_paths: List[Path]) -> List[Chunk]:
+    def preprocess_batch(self, file_paths: List[Path]) -> List[LangChainDocument]:
         all_chunks = []
         for path in file_paths:
-            chunks = self.process_file(path)
-
-            all_chunks.extend(chunks)
+            all_chunks.extend(self.process_file(path))
 
         return all_chunks
