@@ -1,24 +1,32 @@
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 from ..chunking.base import TextChunker
 from ..parsing.base import DocumentParser
-from langchain_core.documents import Document as LangChainDocument
+from ..database.base import VectorStore
+from ..embedding.base import Embedder
 
 
 class IngestionPipeline:
-    """Pipeline from document(-s) to the list of chunks"""
+    """Pipeline from document(-s) to the embeddings (with vector db)"""
 
-    def __init__(self, parser: DocumentParser, chunker: TextChunker):
+    def __init__(
+        self,
+        parser: DocumentParser,
+        chunker: TextChunker,
+        embed: Embedder,
+        vector_store: VectorStore,
+    ):
         self._parser = parser
         self._chunker = chunker
+        self._embed = embed
+        self.vector_store = vector_store
 
-    def process_file(self, file_path: Path) -> List[LangChainDocument]:
+    def process_file(self, file_path: Path) -> int:
         document = self._parser.parse_file(file_path)
-        return self._chunker.chunk_document(document)
+        chunks = self._chunker.chunk_document(document)
+        embeddings = self._embed.embed_chunks(chunks)
+        self._vector_storage.add_documents(chunks, embeddings)
+        return len(chunks)
 
-    def preprocess_batch(self, file_paths: List[Path]) -> List[LangChainDocument]:
-        all_chunks = []
-        for path in file_paths:
-            all_chunks.extend(self.process_file(path))
-
-        return all_chunks
+    def process_batch(self, file_paths: List[Path]) -> Dict[str, int]:
+        return {str(p): self.ingest_file(p) for p in file_paths}
