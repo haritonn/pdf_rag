@@ -49,7 +49,7 @@ class QdrantVectorStore(VectorStore):
             points=points,
         )
 
-    def search(self, query_vector, top_k):
+    def search_up(self, query_vector, top_k):
         hits = self.client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
