@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from langchain_document.core import Document as LangChainDocument
-from collections import List
+from langchain_core.documents import Document as LangChainDocument
+from typing import List
 
 
 class VectorStore(ABC):

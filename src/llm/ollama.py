@@ -5,7 +5,9 @@ from typing import List
 
 
 class OllamaProvider(LLMProvider):
-    def __init__(self, model_name, host="https://localhost:11434"):
+    def __init__(
+        self, model_name, host="http://localhost:11434"
+    ):  # i promise i will remove this hardcoded localhost link...
         self.client = Client(host=host)
         self.model = model_name
 

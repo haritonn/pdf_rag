@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from collections import List
-from langchain_core.document import Document as LangChainDocument
+from typing import List
+from langchain_core.documents import Document as LangChainDocument
 
 
 class Embedder(ABC):

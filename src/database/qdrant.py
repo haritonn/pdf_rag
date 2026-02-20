@@ -2,7 +2,7 @@ import uuid
 from .base import VectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
-from langchain_core.document import Document as LangChainDocument
+from langchain_core.documents import Document as LangChainDocument
 
 
 class QdrantVectorStore(VectorStore):
@@ -29,7 +29,7 @@ class QdrantVectorStore(VectorStore):
                 ),
             )
 
-    def add_document(self, chunks, embeddings):
+    def add_documents(self, chunks, embeddings):
         self.ensure_collection(self.collection_name)
 
         points = [
