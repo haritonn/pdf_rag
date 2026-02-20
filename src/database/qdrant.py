@@ -30,18 +30,18 @@ class QdrantVectorStore(VectorStore):
             )
 
     def add_document(self, chunks, embeddings):
-        self.ensure_collection()
+        self.ensure_collection(self.collection_name)
 
         points = [
             PointStruct(
-                id=str(uuid.uuid64()),
+                id=str(uuid.uuid4()),
                 vector=vec,
                 payload={
                     "data": chunk.page_content,
                     **chunk.metadata,
                 },
             )
-            for chunk, vec in enumerate(chunks, embeddings)
+            for chunk, vec in zip(chunks, embeddings)
         ]
 
         self.client.upsert(
@@ -58,7 +58,7 @@ class QdrantVectorStore(VectorStore):
 
         return [
             LangChainDocument(
-                page_content=hit.payload.pop("text"),
+                page_content=hit.payload.pop("data"),
                 metadata=hit.payload,
             )
             for hit in hits

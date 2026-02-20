@@ -25,7 +25,7 @@ class IngestionPipeline:
         document = self._parser.parse_file(file_path)
         chunks = self._chunker.chunk_document(document)
         embeddings = self._embed.embed_chunks(chunks)
-        self._vector_storage.add_documents(chunks, embeddings)
+        self._vector_store.add_documents(chunks, embeddings)
         return len(chunks)
 
     def process_batch(self, file_paths: List[Path]) -> Dict[str, int]:
