@@ -8,6 +8,7 @@ dependencies = [
     "docling>=2.73.1",
     "fastembed",
     "langchain>=1.2.10",
+    "ollama>=0.6.1",
     "pandas>=2.3.3",
     "qdrant-client>=1.17.0",
 ]
