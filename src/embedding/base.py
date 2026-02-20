@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from collections import List
-from langchain_core.document import Document as LangChainDocument
+from typing import List
+from langchain_core.documents import Document as LangChainDocument
 
 
-class EmbeddingClass(ABC):
+class Embedder(ABC):
     @abstractmethod
-    def embed_chunks(self, chunks: List[LangChainDocument]) -> List[List[float]]:
-        pass
+    def embed_chunks(self, chunks: List[LangChainDocument]) -> List[List[float]]: ...
