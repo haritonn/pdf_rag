@@ -76,7 +76,7 @@ class QdrantVectorStore(VectorStore):
                 ),
                 Prefetch(query=dense_vec.tolist(), using="dense", limit=top_k * 2),
             ],
-            query=FusionQuery(fusion=Fusion.RPF),
+            query=FusionQuery(fusion=Fusion.RRF),
             limit=top_k,
         ).points
 

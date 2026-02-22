@@ -9,7 +9,6 @@ from .base import DocumentParser
 
 
 class DoclingParser(DocumentParser):
-
     def __init__(self, extract_images=False, extract_tables=True):
         pipeline_options = PdfPipelineOptions()
         pipeline_options.do_ocr = False
@@ -101,7 +100,9 @@ class DoclingParser(DocumentParser):
                                 "image_path": Path(image_path) if image_path else None,
                                 "classification": classification,
                                 "page": pic.prov[0].page_no if pic.prov else None,
-                                "bbox": pic.prov[0].bbox.as_tuple() if pic.prov else None,
+                                "bbox": pic.prov[0].bbox.as_tuple()
+                                if pic.prov
+                                else None,
                             },
                         )
                     )
@@ -110,7 +111,11 @@ class DoclingParser(DocumentParser):
 
         return Document(
             elements=elements,
-            metadata={"file_name": Path(file_path).name, "num_pages": len(doc.pages)},
+            metadata={
+                "file_name": Path(file_path).name,
+                "num_pages": len(doc.pages),
+                "source": str(file_path),
+            },
         )
 
     def _get_element_type(self, label):
@@ -133,4 +138,3 @@ class DoclingParser(DocumentParser):
         elif "caption" in label_lower:
             return 4
         return None
-
