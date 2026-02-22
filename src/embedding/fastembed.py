@@ -1,14 +1,18 @@
 from .base import Embedder
-from fastembed import TextEmbedding
+from fastembed import TextEmbedding, SparseTextEmbedding
 
 
 class FastEmbedEmbedder(Embedder):
-    def __init__(self, model_name):
-        self.model = TextEmbedding(model_name)
+    def __init__(self, dense_model, sparse_model):
+        self.dense = TextEmbedding(dense_model)
+        self.sparse = SparseTextEmbedding(sparse_model)
 
     def embed_chunks(self, chunks):
         texts = [c.page_content for c in chunks]
-        return list(self.model.embed(texts))
+        return list(zip(self.dense.embed(texts), self.sparse.embed(texts)))
 
     def embed_query(self, query):
-        return list(self.model.embed(query))[0]
+        return (
+            list(self.dense.embed([query])[0]),
+            list(self.sparse.embed([query])[0]),
+        )

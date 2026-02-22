@@ -1,7 +1,17 @@
 import uuid
 from .base import VectorStore
 from qdrant_client import QdrantClient
-from qdrant_client.models import VectorParams, Distance, PointStruct
+from qdrant_client.models import (
+    VectorParams,
+    Distance,
+    PointStruct,
+    SparseVectorParams,
+    SparseIndexParams,
+    SparseVector,
+    Prefetch,
+    FusionQuery,
+    Fusion,
+)
 from langchain_core.documents import Document as LangChainDocument
 
 
@@ -23,10 +33,14 @@ class QdrantVectorStore(VectorStore):
         if not self.collection_exists(collection_name):
             self.client.create_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(
-                    size=self.vector_size,
-                    distance=self.distance,
-                ),
+                vectors_config={
+                    "dense": VectorParams(
+                        size=self.vector_size, distance=self.distance
+                    ),
+                },
+                sparse_vectors_config={
+                    "sparse": SparseVectorParams(index=SparseIndexParams()),
+                },
             )
 
     def add_documents(self, chunks, embeddings):
@@ -35,24 +49,34 @@ class QdrantVectorStore(VectorStore):
         points = [
             PointStruct(
                 id=str(uuid.uuid4()),
-                vector=vec,
-                payload={
-                    "data": chunk.page_content,
-                    **chunk.metadata,
+                vector={
+                    "dense": dense.tolist(),
+                    "sparse": SparseVector(
+                        indices=sparse.indices.tolist(), values=sparse.values.tolist()
+                    ),
                 },
+                payload={"data": chunk.page_content, **chunk.metadata},
             )
-            for chunk, vec in zip(chunks, embeddings)
+            for chunk, (dense, sparse) in zip(chunks, embeddings)
         ]
-
-        self.client.upsert(
-            collection_name=self.collection_name,
-            points=points,
-        )
+        self.client.upsert(collection_name=self.collection_name, points=points)
 
     def search_up(self, query_vector, top_k):
+        dense_vec, sparse_emb = query_vector
         hits = self.client.query_points(
             collection_name=self.collection_name,
-            query=query_vector,
+            prefetch=[
+                Prefetch(
+                    query=SparseVector(
+                        indices=sparse_emb.indices.tolist(),
+                        values=sparse_emb.values.tolist(),
+                    ),
+                    using="sparse",
+                    limit=top_k * 2,
+                ),
+                Prefetch(query=dense_vec.tolist(), using="dense", limit=top_k * 2),
+            ],
+            query=FusionQuery(fusion=Fusion.RPF),
             limit=top_k,
         ).points
 
