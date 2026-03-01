@@ -6,7 +6,6 @@ from .base import TextChunker
 
 
 class LangChainChunker(TextChunker):
-
     def __init__(self, chunk_size, chunk_overlap):
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -30,16 +29,19 @@ class LangChainChunker(TextChunker):
             }
 
             if elem.type in ("table", "formula", "code"):
-                chunks.append(LangChainDocument(page_content=elem.content, metadata=base_meta))
+                chunks.append(
+                    LangChainDocument(page_content=elem.content, metadata=base_meta)
+                )
                 chunk_id += 1
                 continue
 
             for text in self.splitter.split_text(elem.content):
-                chunks.append(LangChainDocument(
-                    page_content=text,
-                    metadata={**base_meta, "chunk_id": chunk_id},
-                ))
+                chunks.append(
+                    LangChainDocument(
+                        page_content=text,
+                        metadata={**base_meta, "chunk_id": chunk_id},
+                    )
+                )
                 chunk_id += 1
 
         return chunks
-
