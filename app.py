@@ -80,14 +80,17 @@ for msg in st.session_state.messages:
 if prompt := st.chat_input("Input your answer here!"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.markdown("prompt")
+        st.markdown(prompt)
     with st.chat_message("assistant"):
-        with st.spinner("RAG preprocessing..."):
+        with st.spinner("LLM thinking..."):
             result = st.session_state.pipeline_retrieval.query(prompt)
             response = result.answer
             st.markdown(response)
             sources = "\n".join(
-                [f"- {doc.metadata.get('source', 'N/A')}" for doc in result.source[:3]]
+                [
+                    f"- {doc.metadata.get('source', 'N/A')}"
+                    for doc in result.source_chunks[:3]
+                ]
             )
             with st.expander("Sources"):
                 for i, doc in enumerate(result.source_chunks[:3], 1):
