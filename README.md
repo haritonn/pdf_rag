@@ -1,28 +1,25 @@
-## О проекте
+# About
+This project is a `Streamlit` application of a local RAG system, whose task is to answer questions about attached `.pdf` documents. 
 
-По задумке данный проект является локальной `RAG`-системой, предназначенной для аггрегирования, например, лекций
-(да и вообще любого `.pdf`) контента.
+![interface photo](https://raw.githubusercontent.com/haritonn/pdf_rag/main/assets/interface.png)
 
-Предполагается как терминальное приложение, в котором можно будет указать путь, из которого можно:
-* Выборочно достать любую `.pdf` (или несколько)
-* Автоматически спарсить все `.pdf` в этом каталоге
+Core features:
+- `Streamlit` simple & cool interface;
+- Ability to switch backbone LLM, db name & even embedder model directly through interface;
+- Ability to select Top-K best sources for model;
+- Easily scalable, everything is implemented through abstract classes;
+- Working with popular `Ollama` framework;
+- Ability to check sources and concrete contexts which LLM found helpful for answering;
+- Simple launching.
 
-Далее, после установки контекста, можно начать диалог с заранее (пред?)обученной моделью.
+## Installation
+```sh
+git clone git@github.com:haritonn/pdf_rag.git
+cd pdf_rag/
+```
 
-## `Pros`
-* Более быстрое аггрегирование информации: можно сразу задать уточняющий вопрос вместо того, чтобы бесконечно бегать по огромной `.pdf`
-* Избегание бреда из интернета: весь ответ гарантированно генерируется только на основе `.pdf`
-* Гибкость: возможность анализировать несколько источников одновременно
-* Удобство: терминальное приложение вместо веба (по крайней мере на мой взгляд) сильно удобнее
-
-## `Cons (mostly mine skill issue)`
-* Пока непонятно, насколько хорошо `RAG` будет работать с несколькими источниками
-* Т.к. это добро разворачивается локально, это будет жрать достаточно ресурсов
-* Громоздкость: предыдущий пункт + локальный storage для qdrant
-* Язык программирования
-
-## Что добавить в будущем
-* `Reranker`
-* `Hybrid search`
-* Кэширование уже ранее спаршенных документов
-* (?) `Conversation history`
+## Launching
+Since it local make sure that previous copy of `qdrant_db/` folder doesn't exist. Then:
+```sh
+uv run streamlit run app.py
+```
