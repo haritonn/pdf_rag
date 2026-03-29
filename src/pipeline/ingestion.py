@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
+
 from ..chunking.base import TextChunker
-from ..parsing.base import DocumentParser
 from ..database.base import VectorStore
 from ..embedding.base import Embedder
+from ..parsing.base import DocumentParser
 
 
 class IngestionPipeline:
@@ -29,4 +30,4 @@ class IngestionPipeline:
         return len(chunks)
 
     def process_batch(self, file_paths: List[Path]) -> Dict[str, int]:
-        return {str(p): self.ingest_file(p) for p in file_paths}
+        return {str(p): self.process_file(p) for p in file_paths}

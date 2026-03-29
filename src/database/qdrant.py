@@ -1,18 +1,20 @@
 import uuid
-from .base import VectorStore
+
+from langchain_core.documents import Document as LangChainDocument
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
-    VectorParams,
     Distance,
+    Fusion,
+    FusionQuery,
     PointStruct,
-    SparseVectorParams,
+    Prefetch,
     SparseIndexParams,
     SparseVector,
-    Prefetch,
-    FusionQuery,
-    Fusion,
+    SparseVectorParams,
+    VectorParams,
 )
-from langchain_core.documents import Document as LangChainDocument
+
+from .base import VectorStore
 
 
 class QdrantVectorStore(VectorStore):
@@ -82,8 +84,8 @@ class QdrantVectorStore(VectorStore):
 
         return [
             LangChainDocument(
-                page_content=hit.payload.pop("data"),
-                metadata=hit.payload,
+                page_content=hit.payload["data"],
+                metadata={k: v for k, v in hit.payload.items() if k != "data"},
             )
             for hit in hits
         ]

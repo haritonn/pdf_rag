@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from langchain_core.documents import Document as LangChainDocument
 from typing import List
+
+from langchain_core.documents import Document as LangChainDocument
 
 
 class VectorStore(ABC):
     @abstractmethod
     def add_documents(
-        self, chunks: List[LangChainDocument], ebmeddings: List[List[float]]
+        self, chunks: List[LangChainDocument], embeddings: List[List[float]]
     ) -> None: ...
 
     @abstractmethod

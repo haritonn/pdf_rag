@@ -1,6 +1,6 @@
-import streamlit as st
 from pathlib import Path
 
+import streamlit as st
 
 VECTOR_SIZE = 384
 CHUNK_SIZE = 512
@@ -29,12 +29,12 @@ with st.sidebar:
 
 # chached loading pipeline
 @st.cache_resource
-def init_pipelines(col_name=col_name, llm_model=llm_model):
-    from src.parsing.docling import DoclingParser
+def init_pipelines(col_name, llm_model):
     from src.chunking.langchain import LangChainChunker
-    from src.embedding.fastembed import FastEmbedEmbedder
     from src.database.qdrant import QdrantVectorStore
+    from src.embedding.fastembed import FastEmbedEmbedder
     from src.llm.ollama import OllamaProvider
+    from src.parsing.docling import DoclingParser
     from src.pipeline.ingestion import IngestionPipeline
     from src.pipeline.retrieval import RetrievalPipeline
 
@@ -51,7 +51,7 @@ def init_pipelines(col_name=col_name, llm_model=llm_model):
 
 if not st.session_state.initialized:
     st.session_state.pipeline_ingest, st.session_state.pipeline_retrieval = (
-        init_pipelines()
+        init_pipelines(col_name, llm_model)
     )
     st.session_state.initialized = True
     st.success("Pipelines ready!")
