@@ -1,16 +1,25 @@
+from typing import Protocol
+
 from ..database.base import VectorStore
 from ..embedding.base import Embedder
-from ..llm.base import LLMProvider
 from ..models.retrieval import RetrievalResult
 
 MAX_CONTEXT_CHARS = 6000
 
 
+class StreamingGenerator(Protocol):
+    def stream(self, prompt: str, context_docs: list[str]): ...
+
+
 class RetrievalPipeline:
-    """Pipeline from chunks to LLM provided answer"""
+    """Pipeline from chunks to an LLM-provided answer."""
 
     def __init__(
-        self, embed: Embedder, store: VectorStore, llm: LLMProvider, top_k: int
+        self,
+        embed: Embedder,
+        store: VectorStore,
+        llm: StreamingGenerator,
+        top_k: int,
     ):
         self._embed = embed
         self._vector_store = store
@@ -32,7 +41,7 @@ class RetrievalPipeline:
 
     def stream(self, question):
         chunks = self._trim_context(self._get_context_docs(question))
-        text_contents = [c.page_content for c in chunks]
+        text_contents = [chunk.page_content for chunk in chunks]
         return self._llm.stream(question, text_contents), chunks
 
     def query(self, question):

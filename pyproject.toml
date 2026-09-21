@@ -7,13 +7,12 @@ requires-python = ">=3.11"
 dependencies = [
     "docling>=2.73.1",
     "fastembed",
-    "langchain>=1.2.10",
-    "langchain-community",
-    "langchain-text-splitters>=1.1.1",
+    "langchain-core",
     "ollama>=0.6.1",
-    "pandas>=2.3.3",
     "pytest>=9.0.2",
     "qdrant-client>=1.17.0",
-    "rank-bm25",
-    "streamlit>=1.6.0",
+    "datasets",
+    "ranx",
+    "transformers",
+    "ragas",
 ]
