@@ -19,7 +19,7 @@ class OllamaProvider:
             {"role": "system", "content": system},
             {
                 "role": "user",
-                "content": f"Context:\n{context_str}\n\nQuestion: {prompt}",
+                "content": f"Контекст:\n{context_str}\n\nВопрос: {prompt}",
             },
         ]
 

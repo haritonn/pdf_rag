@@ -2,6 +2,11 @@ import json
 import unicodedata
 from collections import Counter
 from datasets import load_dataset
+from typing import Mapping, Any
+
+from src.models.qasper import (
+    QasperPaper, QasperSection, QasperQuestion, QasperAnswer, AnswerType
+)
 
 
 BASE_URL = (
@@ -26,58 +31,48 @@ def get_answer_type(answer):
     if answer["yes_no"] is not None: return "boolean"
     return "unknown"
 
+def parse_qasper_answer(raw: Mapping[str, Any]) -> QasperAnswer:
+      return QasperAnswer(
+          unanswerable=bool(raw["unanswerable"]),
+          extractive_spans=tuple(raw["extractive_spans"]),
+          free_form_answer=raw["free_form_answer"],
+          yes_no=raw["yes_no"],
+          evidence=tuple(raw["evidence"]),
+      )
 
-def summarize_qasper(dataset):
-    stats = Counter(papers=len(dataset))
-    answer_types = Counter()
-    unique_evidence = set()
+def parse_qasper_paper(raw: Mapping[str, Any]) -> QasperPaper:
+    full_text = raw['full_text']
+    qas = raw['qas']
+    sections = tuple(
+        QasperSection(
+            name=section_name,
+            paragraphs=tuple(paragraph for paragraph in paragraphs)
+        ) for section_name, paragraphs in zip(full_text['section_name'], full_text['paragraphs'], strict=True)
+    )
 
-    for paper in dataset:
-        full_text = paper["full_text"]
-        paragraphs = [
-            text
-            for section in full_text["paragraphs"] for text in section
-            if text.strip()
-        ]
-        paragraph_set = {normalize_text(text) for text in paragraphs}
-        stats["sections"] += len(full_text["section_name"])
-        stats["paragraphs"] += len(paragraphs)
-        stats["questions"] += len(paper["qas"]["question"])
+    questions = tuple(
+        QasperQuestion(
+            text=question,
+            answers=tuple(parse_qasper_answer(answer) for answer in answer_group['answer'])
+        ) for question, answer_group in zip(qas['question'], qas['answers'], strict=True)
+    )
 
-        for answer_group in paper["qas"]["answers"]:
-            answers = answer_group["answer"]
-            stats["annotations"] += len(answers)
-            unanswerable_flags = [answer["unanswerable"] for answer in answers]
-
-            if unanswerable_flags and all(unanswerable_flags):
-                stats["unanswerable_questions"] += 1
-            elif any(unanswerable_flags):
-                stats["mixed_questions"] += 1
-            else:
-                stats["answerable_questions"] += 1
-
-            for answer in answers:
-                answer_types[get_answer_type(answer)] += 1
-                for evidence in answer["evidence"]:
-                    if evidence.startswith("FLOAT SELECTED"):
-                        stats["float_evidence_items"] += 1
-                        continue
-
-                    stats["text_evidence_items"] += 1
-                    evidence = normalize_text(evidence)
-                    unique_evidence.add(evidence)
-                    if evidence in paragraph_set:
-                        stats["matched_text_evidence_items"] += 1
-                    else:
-                        stats["unmatched_text_evidence_items"] += 1
-
-    return {
-        **stats,
-        "answer_types": dict(answer_types),
-        "unique_text_evidence_items": len(unique_evidence),
-    }
-
+    return QasperPaper(
+        paper_id=raw['id'],
+        title=raw['title'],
+        abstract=raw['abstract'],
+        sections=sections,
+        questions=questions,
+    )
 
 if __name__ == "__main__":
-    summary = summarize_qasper(load_qasper())
-    print(json.dumps(summary, indent=2))
+    dataset = load_qasper()
+    paper = parse_qasper_paper(dataset[0])
+    assert paper.paper_id
+    assert paper.title
+    assert paper.abstract
+    assert all(
+        isinstance(answer.answer_type, AnswerType)
+        for question in paper.questions
+        for answer in question.answers
+    )
