@@ -22,6 +22,13 @@ dependencies = [
 [project.scripts]
 qasper-eval = "src.evaluation.cli:main"
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+markers = [
+    "integration: uses a real local Qdrant instance",
+    "gpu: requires a working NVIDIA CUDA environment",
+]
+
 [[tool.uv.index]]
 name = "onnxruntime-cuda12"
 url = "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/"

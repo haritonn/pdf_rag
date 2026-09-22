@@ -12,3 +12,4 @@ artifacts/qasper/*.json
 artifacts/qasper/*.jsonl
 .qdrant_db/
 :memory:.ses
+temp_db/
