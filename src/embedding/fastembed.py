@@ -1,5 +1,5 @@
 from .base import Embedder
-from fastembed import TextEmbedding, SparseTextEmbedding
+from fastembed import SparseTextEmbedding, TextEmbedding
 
 
 class FastEmbedEmbedder(Embedder):
@@ -7,9 +7,31 @@ class FastEmbedEmbedder(Embedder):
         self,
         dense_model="BAAI/bge-small-en-v1.5",
         sparse_model="Qdrant/bm42-all-minilm-l6-v2-attentions",
+        providers=None,
     ):
-        self.dense = TextEmbedding(dense_model)
-        self.sparse = SparseTextEmbedding(sparse_model)
+        self.providers = providers or ["CPUExecutionProvider"]
+        self.dense = TextEmbedding(dense_model, providers=self.providers)
+        self.sparse = SparseTextEmbedding(sparse_model, providers=self.providers)
+
+        self._check_providers()
+
+    def _check_providers(self) -> None:
+        requested = set(self.providers)
+        if "CUDAExecutionProvider" not in requested:
+            return
+
+        sessions = (
+            self.dense.model.model,
+            self.sparse.model.model,
+        )
+        actual = [set(session.get_providers()) for session in sessions]
+        if any("CUDAExecutionProvider" not in providers for providers in actual):
+            raise RuntimeError(
+                "CUDA was requested for FastEmbed, but the CUDA execution "
+                "provider was not activated by one of the ONNX sessions. "
+                "Check nvidia-smi and install a CUDA-compatible "
+                "onnxruntime-gpu build."
+            )
 
     def embed_chunks(self, chunks):
         texts = [c.page_content for c in chunks]

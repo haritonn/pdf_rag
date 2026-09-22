@@ -6,7 +6,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "docling>=2.73.1",
-    "fastembed",
+    "fastembed-gpu",
+    "onnxruntime-gpu",
     "langchain-core",
     "ollama>=0.6.1",
     "pytest>=9.0.2",
@@ -15,4 +16,16 @@ dependencies = [
     "ranx",
     "transformers",
     "ragas",
+    "tqdm>=4.66",
 ]
+
+[project.scripts]
+qasper-eval = "src.evaluation.cli:main"
+
+[[tool.uv.index]]
+name = "onnxruntime-cuda12"
+url = "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/"
+explicit = true
+
+[tool.uv.sources]
+onnxruntime-gpu = { index = "onnxruntime-cuda12" }

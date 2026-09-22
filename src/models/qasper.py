@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Mapping, Any
 from enum import StrEnum
 
 class AnswerType(StrEnum):

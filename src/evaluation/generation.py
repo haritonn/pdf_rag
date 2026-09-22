@@ -3,8 +3,10 @@ from typing import List
 
 from ollama import Client
 
+from .retrieval import StreamingGenerator
 
-class OllamaProvider:
+
+class OllamaProvider(StreamingGenerator):
     def __init__(self, model_name, host="http://localhost:11434"):
         self.client = Client(host=host)
         self.model = model_name

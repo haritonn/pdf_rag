@@ -22,6 +22,7 @@ class QdrantVectorStore(VectorStore):
         self, collection_name, vector_size, path=".qdrant_db", distance=Distance.COSINE
     ):
         self.client = QdrantClient(path=path)
+        self.collection_name = collection_name
         self.vector_size = vector_size
         self.distance = distance
 
@@ -32,7 +33,6 @@ class QdrantVectorStore(VectorStore):
     def ensure_collection(self, collection_name: str) -> None:
         """Creating collection if it doesnt exist"""
         if not self.collection_exists(collection_name):
-            self.collection_name = collection_name
             self.client.create_collection(
                 collection_name=collection_name,
                 vectors_config={
