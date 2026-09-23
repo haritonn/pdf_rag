@@ -64,7 +64,7 @@ def test_pipe_got_query():
     assert result.answer == 'generated answer'
     assert embedder.queries == ['мне не очень нравится писать тесты']
     assert store.calls == [
-              ("query-vector", 2)
+              ("query-vector", 50)
           ]
 
     assert llm.calls == [

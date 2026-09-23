@@ -14,6 +14,7 @@ from .index import build_index
 from .metrics import evaluate_retrieval
 from .qasper import load_qasper, parse_qasper_paper
 from .retrieval import RetrievalPipeline
+from ..reranking.fastembed import FastEmbedReranker
 
 DEFAULT_COLLECTION = "qasper_hybrid"
 DEFAULT_DB_PATH = ".qdrant_db"
@@ -47,6 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
     _add_index_arguments(query)
     query.add_argument("question")
     query.add_argument("--top-k", type=int, default=5)
+    query.add_argument("--candidate-k", type=int, default=50)
+    query.add_argument(
+        "--reranker-model",
+        default="Xenova/ms-marco-MiniLM-L-6-v2",
+    )
     query.add_argument("--ollama-host", default=DEFAULT_OLLAMA_HOST)
     query.add_argument("--ollama-model", default=DEFAULT_OLLAMA_MODEL)
     query.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
@@ -63,6 +69,11 @@ def build_parser() -> argparse.ArgumentParser:
     _add_index_arguments(evaluation)
     evaluation.add_argument("--limit", type=int)
     evaluation.add_argument("--top-k", type=int, default=10)
+    evaluation.add_argument("--candidate-k", type=int, default=50)
+    evaluation.add_argument(
+        "--reranker-model",
+        default="Xenova/ms-marco-MiniLM-L-6-v2",
+    )
     evaluation.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
     evaluation.add_argument(
         "--output",
@@ -86,6 +97,15 @@ def _make_embedder(args: argparse.Namespace) -> FastEmbedEmbedder:
         sparse_model=args.sparse_model,
         providers=providers,
     )
+
+
+def _make_reranker(args: argparse.Namespace) -> FastEmbedReranker:
+    providers = (
+        ["CUDAExecutionProvider", "CPUExecutionProvider"]
+        if args.device == "cuda"
+        else ["CPUExecutionProvider"]
+    )
+    return FastEmbedReranker(args.reranker_model, providers=providers)
 
 
 def _make_store(args: argparse.Namespace) -> QdrantVectorStore:
@@ -123,6 +143,8 @@ def run_query(args: argparse.Namespace) -> None:
         store=store,
         llm=llm,
         top_k=args.top_k,
+        reranker=_make_reranker(args),
+        candidate_k=args.candidate_k,
     )
 
     result = pipeline.query(args.question)
@@ -145,6 +167,8 @@ def run_evaluate_retrieval(args: argparse.Namespace) -> None:
         _make_embedder(args),
         _make_store(args),
         top_k=args.top_k,
+        reranker=_make_reranker(args),
+        candidate_k=args.candidate_k,
     )
 
     output_path = Path(args.output)

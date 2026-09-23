@@ -4,6 +4,7 @@ from typing import Protocol
 from ..database.base import VectorStore
 from ..embedding.base import Embedder
 from ..models.retrieval import RetrievalResult
+from ..reranking.base import Reranker
 
 MAX_CONTEXT_CHARS = 6000
 
@@ -21,21 +22,30 @@ class RetrievalPipeline:
         store: VectorStore,
         llm: StreamingGenerator,
         top_k: int,
+        reranker: Reranker | None = None,
+        candidate_k: int | None = None,
     ):
         self._embed = embed
         self._vector_store = store
         self._llm = llm
         self.top_k = top_k
+        self._reranker = reranker
+        self.candidate_k = candidate_k or max(50, top_k * 5)
 
     def _get_context_docs(self, query, paper_id=None):
         query_vector = self._embed.embed_query(query)
         if paper_id is None:
-            return self._vector_store.search_up(query_vector, self.top_k)
-        return self._vector_store.search_up(
-            query_vector,
-            self.top_k,
-            paper_id=paper_id,
-        )
+            documents = self._vector_store.search_up(query_vector, self.candidate_k)
+        else:
+            documents = self._vector_store.search_up(
+                query_vector,
+                self.candidate_k,
+                paper_id=paper_id,
+            )
+
+        if self._reranker is not None:
+            return self._reranker.rerank(query, documents, self.top_k)
+        return documents[: self.top_k]
 
     def _trim_context(self, docs):
         result, total = [], 0

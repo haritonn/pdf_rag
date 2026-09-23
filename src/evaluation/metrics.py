@@ -7,6 +7,7 @@ from ranx import Qrels, Run, evaluate
 from ..database.base import VectorStore
 from ..embedding.base import Embedder
 from ..models.qasper import QasperPaper, QasperQuestion
+from ..reranking.base import Reranker
 from .index import paper_to_documents
 
 
@@ -63,6 +64,8 @@ def build_run(
     embedder: Embedder,
     store: VectorStore,
     top_k: int,
+    reranker: Reranker | None = None,
+    candidate_k: int | None = None,
 ) -> dict[str, dict[str, float]]:
     run = {}
     for paper in papers:
@@ -71,12 +74,16 @@ def build_run(
             query_vector = embedder.embed_query(question.text)
             documents = store.search_up(
                 query_vector,
-                top_k,
+                candidate_k or max(50, top_k * 5),
                 paper_id=paper.paper_id,
             )
+            if reranker is not None:
+                documents = reranker.rerank(question.text, documents, top_k)
+            else:
+                documents = documents[:top_k]
             run[qid] = {
                 document.metadata["doc_id"]: float(
-                    document.metadata["_score"]
+                    document.metadata.get("_rerank_score", document.metadata["_score"])
                 )
                 for document in documents
             }
@@ -88,10 +95,19 @@ def evaluate_retrieval(
     embedder: Embedder,
     store: VectorStore,
     top_k: int = 10,
+    reranker: Reranker | None = None,
+    candidate_k: int | None = None,
 ) -> dict[str, float]:
     papers = tuple(papers)
     qrels_dict = build_qrels(papers)
-    run_dict = build_run(papers, embedder, store, top_k)
+    run_dict = build_run(
+        papers,
+        embedder,
+        store,
+        top_k,
+        reranker=reranker,
+        candidate_k=candidate_k,
+    )
 
     if not qrels_dict:
         return {
