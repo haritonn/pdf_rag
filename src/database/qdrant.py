@@ -78,6 +78,10 @@ class QdrantVectorStore(VectorStore):
                 ]
             )
         dense_vec, sparse_emb = query_vector
+        # RRF can only rank documents present in the modality candidate lists.
+        # A small prefetch limit silently discards relevant paragraphs before
+        # fusion, especially when evaluating top-k retrieval.
+        candidate_limit = max(100, top_k * 10)
         hits = self.client.query_points(
             collection_name=self.collection_name,
             prefetch=[
@@ -87,9 +91,15 @@ class QdrantVectorStore(VectorStore):
                         values=sparse_emb.values.tolist(),
                     ),
                     using="sparse",
-                    limit=top_k * 2,
+                    limit=candidate_limit,
+                    filter=query_filter,
                 ),
-                Prefetch(query=dense_vec.tolist(), using="dense", limit=top_k * 2),
+                Prefetch(
+                    query=dense_vec.tolist(),
+                    using="dense",
+                    limit=candidate_limit,
+                    filter=query_filter,
+                ),
             ],
             query=FusionQuery(fusion=Fusion.RRF),
             query_filter=query_filter,
