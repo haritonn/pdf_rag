@@ -49,5 +49,5 @@ class FastEmbedEmbedder(Embedder):
 
     def embed_query(self, query: str) -> Embedding:
         dense = list(self.dense.embed([query]))[0]
-        sparse = list(self.sparse.embed([query]))[0]
+        sparse = list(self.sparse.query_embed([query]))[0]
         return cast(Embedding, (dense, sparse))
