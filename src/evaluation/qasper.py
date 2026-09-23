@@ -1,4 +1,5 @@
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from datasets import load_dataset
 
@@ -8,7 +9,6 @@ from ..models.qasper import (
     QasperQuestion,
     QasperSection,
 )
-
 
 BASE_URL = (
     "https://huggingface.co/datasets/allenai/qasper/"

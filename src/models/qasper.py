@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
+
 class AnswerType(StrEnum):
     UNANSWERABLE = "unanswerable"
     EXTRACTIVE = "extractive"

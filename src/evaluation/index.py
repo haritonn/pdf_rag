@@ -26,6 +26,11 @@ def paper_to_documents(paper: QasperPaper) -> list[Document]:
                         "section": section.name,
                         "section_idx": section_idx,
                         "paragraph_idx": paragraph_idx,
+                        "doc_id": (
+                            f"{paper.paper_id}:"
+                            f"{section_idx}:"
+                            f"{paragraph_idx}"
+                        )
                     },
                 )
             )

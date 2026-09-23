@@ -4,8 +4,11 @@ from langchain_core.documents import Document as LangChainDocument
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance,
+    FieldCondition,
+    Filter,
     Fusion,
     FusionQuery,
+    MatchValue,
     PointStruct,
     Prefetch,
     SparseIndexParams,
@@ -63,7 +66,17 @@ class QdrantVectorStore(VectorStore):
         ]
         self.client.upsert(collection_name=self.collection_name, points=points)
 
-    def search_up(self, query_vector, top_k):
+    def search_up(self, query_vector, top_k, paper_id = None):
+        query_filter = None
+        if paper_id is not None:
+            query_filter = Filter(
+                must=[
+                    FieldCondition(
+                        key="paper_id",
+                        match=MatchValue(value=paper_id),
+                    )
+                ]
+            )
         dense_vec, sparse_emb = query_vector
         hits = self.client.query_points(
             collection_name=self.collection_name,
@@ -79,13 +92,25 @@ class QdrantVectorStore(VectorStore):
                 Prefetch(query=dense_vec.tolist(), using="dense", limit=top_k * 2),
             ],
             query=FusionQuery(fusion=Fusion.RRF),
+            query_filter=query_filter,
             limit=top_k,
         ).points
 
-        return [
-            LangChainDocument(
-                page_content=hit.payload["data"],
-                metadata={k: v for k, v in hit.payload.items() if k != "data"},
-            )
-            for hit in hits
-        ]
+        result = []
+        for hit in hits:
+            if hit.payload is None: continue
+            payload = hit.payload
+            data = payload.get('data')
+            if not isinstance(data, str): continue
+            metadata = {
+                k: v for k, v in payload.items()
+                if k != "data"
+            }
+            metadata["_score"] = float(hit.score)
+            page_content = hit.payload["data"]
+            result.append(LangChainDocument(
+                page_content=page_content,
+                metadata=metadata,
+            ))
+
+        return result

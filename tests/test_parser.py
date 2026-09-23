@@ -3,6 +3,7 @@ import pytest
 from src.evaluation.qasper import parse_qasper_paper
 from src.models.qasper import AnswerType
 
+
 def test_parse_qasper_paper(raw_qasper_paper):
     paper = parse_qasper_paper(raw_qasper_paper)
     assert paper.paper_id == "paper-1"

@@ -1,19 +1,18 @@
-from abc import ABC, abstractmethod
-from typing import List
+from collections.abc import Sequence
+from typing import Protocol
 
 from langchain_core.documents import Document as LangChainDocument
 
+from ..embedding.base import Embedding
 
-class VectorStore(ABC):
-    @abstractmethod
+
+class VectorStore(Protocol):
     def add_documents(
-        self, chunks: List[LangChainDocument], embeddings: List[List[float]]
+        self, chunks: Sequence[LangChainDocument], embeddings: Sequence[Embedding]
     ) -> None: ...
 
-    @abstractmethod
     def search_up(
-        self, query_vector: List[float], top_k: int
-    ) -> List[LangChainDocument]: ...
+        self, query_vector: Embedding, top_k: int, paper_id: str | None = None
+    ) -> list[LangChainDocument]: ...
 
-    @abstractmethod
     def collection_exists(self, collection_name: str) -> bool: ...

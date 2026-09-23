@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import cast
 
 from src.evaluation import generation
 
@@ -34,4 +35,5 @@ def test_ollama_generation(monkeypatch):
     result = provider.generate("question", ["context"])
 
     assert result == "generated answer"
-    assert provider.client.host == "http://localhost:11434"
+    client = cast(FakeClient, provider.client)
+    assert client.host == "http://localhost:11434"

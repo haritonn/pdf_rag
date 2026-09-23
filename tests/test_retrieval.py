@@ -1,25 +1,36 @@
-import pytest
+
+from collections.abc import Iterator
+from typing import Any
 
 from langchain_core.documents import Document
+
 from src.evaluation.retrieval import (
-    MAX_CONTEXT_CHARS,
     RetrievalPipeline,
 )
+
 
 class FakeEmbedder:
     def __init__(self):
         self.queries = []
 
-    def embed_query(self, query):
+    def embed_query(self, query: str) -> Any:
         self.queries.append(query)
         return 'query-vector'
+
+    def embed_chunks(self, chunks: Any) -> list[Any]:
+        return []
 
 
 class FakeStore:
     def __init__(self):
         self.calls = []
 
-    def search_up(self, query_vector, top_k):
+    def search_up(
+        self,
+        query_vector: Any,
+        top_k: int,
+        paper_id: str | None = None,
+    ) -> list[Document]:
         self.calls.append((query_vector, top_k))
 
         return [
@@ -27,12 +38,18 @@ class FakeStore:
             Document(page_content="second context"),
         ]
 
+    def add_documents(self, chunks: Any, embeddings: Any) -> None:
+        pass
+
+    def collection_exists(self, collection_name: str) -> bool:
+        return True
+
 
 class FakeLLM:
     def __init__(self):
         self.calls = []
 
-    def stream(self, prompt, context_docs):
+    def stream(self, prompt, context_docs) -> Iterator[str]:
         self.calls.append((prompt, context_docs))
 
         yield "generated "

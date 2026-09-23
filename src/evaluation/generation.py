@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import List
+from typing import Any, cast
 
 from ollama import Client
 
@@ -11,7 +11,7 @@ class OllamaProvider(StreamingGenerator):
         self.client = Client(host=host)
         self.model = model_name
 
-    def _build_messages(self, prompt, context_docs) -> List[dict]:
+    def _build_messages(self, prompt, context_docs) -> list[dict]:
         system = (
             "Ты ассистент, задача которого - ответить на вопрос, опираясь на источники. Отвечай только на основе данного контекста. "
             "Ответь на том же языке, что и пользователь. Если не удалось найти ответ в контексте - так и скажи. /no_think"
@@ -31,7 +31,8 @@ class OllamaProvider(StreamingGenerator):
             messages=self._build_messages(prompt, context_docs),
             stream=False,
         )
-        return response.message.content
+        response = cast(Any, response)
+        return response.message.content or ""
 
     def stream(self, prompt, context_docs) -> Iterator[str]:
         for chunk in self.client.chat(
@@ -39,4 +40,6 @@ class OllamaProvider(StreamingGenerator):
             messages=self._build_messages(prompt, context_docs),
             stream=True,
         ):
-            yield chunk.message.content
+            chunk = cast(Any, chunk)
+            content = chunk.message.content
+            if content is not None: yield content

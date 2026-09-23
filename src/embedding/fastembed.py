@@ -1,5 +1,10 @@
-from .base import Embedder
+from collections.abc import Sequence
+from typing import Any, cast
+
 from fastembed import SparseTextEmbedding, TextEmbedding
+from langchain_core.documents import Document
+
+from .base import Embedder, Embedding
 
 
 class FastEmbedEmbedder(Embedder):
@@ -20,9 +25,12 @@ class FastEmbedEmbedder(Embedder):
         if "CUDAExecutionProvider" not in requested:
             return
 
+        dense_model = cast(Any, self.dense)
+        sparse_model = cast(Any, self.sparse)
+
         sessions = (
-            self.dense.model.model,
-            self.sparse.model.model,
+            dense_model.model.model,
+            sparse_model.model.model,
         )
         actual = [set(session.get_providers()) for session in sessions]
         if any("CUDAExecutionProvider" not in providers for providers in actual):
@@ -33,13 +41,13 @@ class FastEmbedEmbedder(Embedder):
                 "onnxruntime-gpu build."
             )
 
-    def embed_chunks(self, chunks):
+    def embed_chunks(self, chunks: Sequence[Document]) -> list[Embedding]:
         texts = [c.page_content for c in chunks]
         dense = list(self.dense.embed(texts))
         sparse = list(self.sparse.embed(texts))
-        return list(zip(dense, sparse))
+        return cast(list[Embedding], list(zip(dense, sparse)))
 
-    def embed_query(self, query: str):
+    def embed_query(self, query: str) -> Embedding:
         dense = list(self.dense.embed([query]))[0]
         sparse = list(self.sparse.embed([query]))[0]
-        return dense, sparse
+        return cast(Embedding, (dense, sparse))

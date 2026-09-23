@@ -1,9 +1,9 @@
-import pytest
-
-from src.database.qdrant import QdrantVectorStore
 import numpy as np
 import pytest
 from langchain_core.documents import Document
+
+from src.database.qdrant import QdrantVectorStore
+
 
 class FakeSparseVector:
     def __init__(self, indices, values):
@@ -13,9 +13,9 @@ class FakeSparseVector:
 @pytest.mark.integration
 def test_integration_qdrant(tmp_path):
     client = QdrantVectorStore(
-        collection_name=str(tmp_path / "qdrant"),
+        collection_name="qdrant_test",
         vector_size=2,
-        path="temp_db"
+        path=str(tmp_path / "qdrant"),
     )
 
     dense = np.array([1, 3])
@@ -33,7 +33,9 @@ def test_integration_qdrant(tmp_path):
         )
         assert len(results) == 1
         assert results[0].page_content == "retrieval doc"
-        assert results[0].metadata == {"paper_id": "paper-1",  "section": "intro"}
+        assert results[0].metadata["paper_id"] == "paper-1"
+        assert results[0].metadata["section"] == "intro"
+        assert isinstance(results[0].metadata["_score"], float)
 
     finally:
         client.client.close()

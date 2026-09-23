@@ -1,15 +1,19 @@
 """Command-line entry point for QASPER retrieval experiments."""
 
 import argparse
-from collections.abc import Sequence
+import json
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any, cast
 
 from ..database.qdrant import QdrantVectorStore
 from ..embedding.fastembed import FastEmbedEmbedder
+from ..models.qasper import QasperPaper
 from .generation import OllamaProvider
 from .index import build_index
+from .metrics import evaluate_retrieval
 from .qasper import load_qasper, parse_qasper_paper
 from .retrieval import RetrievalPipeline
-
 
 DEFAULT_COLLECTION = "qasper_hybrid"
 DEFAULT_DB_PATH = ".qdrant_db"
@@ -51,8 +55,25 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print metadata of retrieved chunks.",
     )
+
+    evaluation = commands.add_parser(
+        "evaluate-retrieval",
+        help="Evaluate retrieval against QASPER evidence.",
+    )
+    _add_index_arguments(evaluation)
+    evaluation.add_argument("--limit", type=int)
+    evaluation.add_argument("--top-k", type=int, default=10)
+    evaluation.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
+    evaluation.add_argument(
+        "--output",
+        default="artifacts/qasper/retrieval_metrics.json",
+    )
     return parser
 
+def parse_row(row: object) -> QasperPaper:
+      return parse_qasper_paper(
+          cast(Mapping[str, Any], row)
+      )
 
 def _make_embedder(args: argparse.Namespace) -> FastEmbedEmbedder:
     providers = (
@@ -79,7 +100,7 @@ def run_build_index(args: argparse.Namespace) -> None:
     if args.limit is not None:
         rows = rows.select(range(min(args.limit, len(rows))))
 
-    papers = (parse_qasper_paper(row) for row in rows)
+    papers = (parse_row(row) for row in rows)
     count = build_index(
         papers,
         _make_embedder(args),
@@ -113,6 +134,28 @@ def run_query(args: argparse.Namespace) -> None:
             print(chunk.metadata)
 
 
+def run_evaluate_retrieval(args: argparse.Namespace) -> None:
+    rows = load_qasper()
+    if args.limit is not None:
+        rows = rows.select(range(min(args.limit, len(rows))))
+
+    papers = [parse_row(row) for row in rows]
+    scores = evaluate_retrieval(
+        papers,
+        _make_embedder(args),
+        _make_store(args),
+        top_k=args.top_k,
+    )
+
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as output:
+        json.dump(scores, output, indent=2)
+
+    print(json.dumps(scores, indent=2))
+    print(f"Saved metrics to {output_path}")
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
 
@@ -120,6 +163,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         run_build_index(args)
     elif args.command == "query":
         run_query(args)
+    elif args.command == "evaluate-retrieval":
+        run_evaluate_retrieval(args)
 
 
 if __name__ == "__main__":

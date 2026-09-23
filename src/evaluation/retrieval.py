@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from typing import Protocol
 
 from ..database.base import VectorStore
@@ -8,7 +9,7 @@ MAX_CONTEXT_CHARS = 6000
 
 
 class StreamingGenerator(Protocol):
-    def stream(self, prompt: str, context_docs: list[str]): ...
+    def stream(self, prompt: str, context_docs: list[str]) -> Iterator[str]: ...
 
 
 class RetrievalPipeline:
@@ -26,9 +27,15 @@ class RetrievalPipeline:
         self._llm = llm
         self.top_k = top_k
 
-    def _get_context_docs(self, query):
+    def _get_context_docs(self, query, paper_id=None):
         query_vector = self._embed.embed_query(query)
-        return self._vector_store.search_up(query_vector, self.top_k)
+        if paper_id is None:
+            return self._vector_store.search_up(query_vector, self.top_k)
+        return self._vector_store.search_up(
+            query_vector,
+            self.top_k,
+            paper_id=paper_id,
+        )
 
     def _trim_context(self, docs):
         result, total = [], 0
@@ -39,12 +46,12 @@ class RetrievalPipeline:
             total += len(doc.page_content)
         return result
 
-    def stream(self, question):
-        chunks = self._trim_context(self._get_context_docs(question))
+    def stream(self, question, paper_id=None):
+        chunks = self._trim_context(self._get_context_docs(question, paper_id))
         text_contents = [chunk.page_content for chunk in chunks]
         return self._llm.stream(question, text_contents), chunks
 
-    def query(self, question):
-        stream, chunks = self.stream(question)
+    def query(self, question, paper_id=None):
+        stream, chunks = self.stream(question, paper_id)
         answer = "".join(stream)
         return RetrievalResult(answer=answer, source_chunks=chunks)
